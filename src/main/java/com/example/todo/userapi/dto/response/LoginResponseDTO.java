@@ -17,12 +17,12 @@ public class LoginResponseDTO {
     
     private String email;
     private String userName;
-    private Role role;
     
     @JsonFormat(pattern = "yyyy년 MM월 dd일")
     private LocalDate joinDate;
     
-    private String token;
+    private String token; // 인증 토큰
+    private Role role; // 권한
     
     public LoginResponseDTO(User user, String token) {
         this.email = user.getEmail();
