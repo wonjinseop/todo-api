@@ -1,5 +1,6 @@
 package com.example.todo.userapi.dto.response;
 
+import com.example.todo.userapi.entity.Role;
 import com.example.todo.userapi.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
@@ -16,6 +17,7 @@ public class LoginResponseDTO {
     
     private String email;
     private String userName;
+    private Role role;
     
     @JsonFormat(pattern = "yyyy년 MM월 dd일")
     private LocalDate joinDate;
@@ -25,6 +27,7 @@ public class LoginResponseDTO {
     public LoginResponseDTO(User user, String token) {
         this.email = user.getEmail();
         this.userName = user.getUserName();
+        this.role = user.getRole();
         this.joinDate = LocalDate.from(user.getJoinDate());
         this.token = token;
     }
