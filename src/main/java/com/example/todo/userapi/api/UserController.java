@@ -51,13 +51,8 @@ public class UserController {
         ResponseEntity<FieldError> resultEntity = getFieldErrorResponseEntity(result);
         if (resultEntity != null) return resultEntity;
         
-        try {
-            UserSignUpResponseDTO responseDTO = userService.create(dto);
-            return ResponseEntity.ok().body(responseDTO);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        UserSignUpResponseDTO responseDTO = userService.create(dto);
+        return ResponseEntity.ok().body(responseDTO);
     }
     
     // 로그인 요청 처리
@@ -76,13 +71,8 @@ public class UserController {
         
         if (response != null) return response;
         
-        try {
-            LoginResponseDTO responseDTO = userService.authenticate(dto);
-            return ResponseEntity.ok().body(responseDTO);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+        LoginResponseDTO responseDTO = userService.authenticate(dto);
+        return ResponseEntity.ok().body(responseDTO);
     }
     
     // 일반 회원을 프리미엄 회원으로 승격하는 요청 처리
@@ -95,7 +85,8 @@ public class UserController {
             ) {
         log.info("/api/auth/promote - PUT!");
         
-        
+        LoginResponseDTO responseDTO = userService.promoteToPremium(userInfo);
+        return ResponseEntity.ok().body(responseDTO);
     }
     
     private static ResponseEntity<FieldError> getFieldErrorResponseEntity(BindingResult result) {
