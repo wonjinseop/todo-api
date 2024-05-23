@@ -146,22 +146,43 @@ public class UserService {
     public String findProfilePath(String userId) {
         User user
                 = userRepository.findById(userId).orElseThrow(RuntimeException::new);
+        String profileImg = user.getProfileImg();
+        // 만약 조회한 파일 경로가 http://~~~로 시작한다면 -> 카카오 로그인 한 사람이다!
+        if (profileImg.startsWith("http://")) {
+            return profileImg;
+        }
         // DB에는 파일명만 저장. -> service가 가지고 있는 Root Path와 연결해서 리턴
-        return uploadRootPath + "/" + user.getProfileImg();
+        return uploadRootPath + "/" + profileImg;
     }
     
-    public void kakaoService(String code) {
+    public LoginResponseDTO kakaoService(String code) {
         // 인가 코드를 통해 토큰를 발급받기
         String accessToken = getKakaoAccessToken(code);
         log.info("token: {}", accessToken);
         
         // 토큰을 통해 사용자 정보 가져오기
         KakaoUserDTO userDTO = getKakaoUserInfo(accessToken);
+        log.info("userDTO: {}", userDTO);
         
         // 일회성 로그인으로 처리 -> dto를 바로 화면단에 리턴
         // 회원가입 처리 -> 이메일 중복 검사 진행 -> 자체 jwt를 생성해서 토큰을 화면단에 리턴.
         // -> 화면단에서는 적절한 url을 선택하여 redirect를 진행.
+        if (!isDuplicate(userDTO.getKakaoAccount().getEmail())) {
+            // 이메일이 중복되지 않았다. -> 이전에 로그인 한 적 없음 -> DB에 데이터를 세팅
+            User saved = userRepository.save(userDTO.toEntity(accessToken));
+        }
+        // 이메일이 중복됐다? -> 이전에 로그인 한 적이 있다. -> DB에 데이터를 또 넣을 필요는 없다.
+        User foundUser
+                = userRepository.findByEmail(userDTO.getKakaoAccount().getEmail()).orElseThrow();
         
+        // 기존에 로그인했던 사용자의 access_token값을 update
+        foundUser.changeAccessToken(accessToken);
+        userRepository.save(foundUser);
+        
+        // 우리 사이트에서 사용하는 jwt를 생성.
+        String token = tokenProvider.createToken(foundUser);
+        
+        return new LoginResponseDTO(foundUser, token);
     }
     
     private KakaoUserDTO getKakaoUserInfo(String accessToken) {
@@ -237,5 +258,27 @@ public class UserService {
         // 여러가지 데이터 중 access_token이라는 이름의 데이터를 리턴
         // Object를 String으로 형 변환해서 리턴.
         return (String) responseData.get("access_token");
+    }
+    
+    public String logout(TokenUserInfo userInfo) {
+        User foundUser = userRepository.findByEmail(userInfo.getEmail())
+                .orElseThrow();
+        
+        String accessToken = foundUser.getAccessToken();
+        // accessToken이 null이 아니라면 카카오 로그인을 한 애겠지?
+        if (accessToken != null) {
+            String reqURI = "https://kapi.kakao.com/v1/user/logout";
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Authorization", "Bearer " + accessToken);
+            
+            ResponseEntity<String> responseData
+                    = new RestTemplate().exchange(reqURI, HttpMethod.POST, new HttpEntity<>(headers), String.class);
+            foundUser.changeAccessToken(null);
+            userRepository.save(foundUser);
+            
+            return responseData.getBody();
+        }
+        
+        return null;
     }
 }
