@@ -1,7 +1,6 @@
 package com.example.todo.filter;
 
 import com.example.todo.exception.ErrorCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -39,6 +38,9 @@ public class JWTExceptionFilter extends OncePerRequestFilter {
         } catch (JwtException e) {
             log.warn("JwtException 발생함!");
             setErrorResponse(response, ErrorCode.INVALID_TOKEN);
+        } catch (IllegalArgumentException e) {
+            log.warn("토큰이 전달되지 않음!");
+            setErrorResponse(response, ErrorCode.INVALID_AUTH);
         }
     }
     
