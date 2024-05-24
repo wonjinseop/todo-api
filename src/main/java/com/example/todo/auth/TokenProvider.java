@@ -73,11 +73,11 @@ public class TokenProvider {
     }
     
     public String createAccessKey(User userEntity) {
-        return createToken(userEntity, SECRET_KEY, 30, ChronoUnit.SECONDS);
+        return createToken(userEntity, SECRET_KEY, 15, ChronoUnit.SECONDS);
     }
     
     public String createRefreshKey(User userEntity) {
-        return createToken(userEntity, REFRESH_SECRET_KEY, 10, ChronoUnit.MINUTES);
+        return createToken(userEntity, REFRESH_SECRET_KEY, 2, ChronoUnit.MINUTES);
     }
     
     // 토큰에서 클레임을 추출하는 로직을 분리했습니다.
@@ -91,6 +91,12 @@ public class TokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims;
+    }
+    
+    // 리프레시 토큰 만료시간만 추출하기
+    public Date getExpiryDate(String token) {
+        Claims claims = getClaims(token, REFRESH_SECRET_KEY);
+        return claims.getExpiration();
     }
     
     /**
