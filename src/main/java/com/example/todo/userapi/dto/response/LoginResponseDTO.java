@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 @Getter @ToString
 @EqualsAndHashCode
@@ -21,10 +22,10 @@ public class LoginResponseDTO {
     @JsonFormat(pattern = "yyyy년 MM월 dd일")
     private LocalDate joinDate;
     
-    private String token; // 인증 토큰
+    private Map<String, String> token; // 인증 토큰
     private Role role; // 권한
     
-    public LoginResponseDTO(User user, String token) {
+    public LoginResponseDTO(User user, Map<String, String> token) {
         this.email = user.getEmail();
         this.userName = user.getUserName();
         this.role = user.getRole();

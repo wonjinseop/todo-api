@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -95,7 +96,7 @@ public class UserService {
         
         // 로그인 성공 후에 클라이언트에게 뭘 리턴해 줄 것인가?
         // -> JWT를 클라이언트에 발급해 주어야 한다! -> 로그인 유지를 위해!
-        String token = tokenProvider.createToken(user);
+        Map<String, String> token = getTokenMap(user);
         
         return new LoginResponseDTO(user, token);
     }
@@ -115,10 +116,11 @@ public class UserService {
         User saved = userRepository.save(user);
         
         // 토큰을 재발급! (새롭게 변경된 정보가 반영된)
-        String token = tokenProvider.createToken(saved);
+        Map<String, String> token = getTokenMap(saved);
         
         return new LoginResponseDTO(saved, token);
     }
+    
     
     /**
      * 업로드 된 파일을 서버에 저장하고 저장 경로를 리턴.
@@ -180,7 +182,7 @@ public class UserService {
         userRepository.save(foundUser);
         
         // 우리 사이트에서 사용하는 jwt를 생성.
-        String token = tokenProvider.createToken(foundUser);
+        Map<String, String> token = getTokenMap(foundUser);
         
         return new LoginResponseDTO(foundUser, token);
     }
@@ -280,5 +282,15 @@ public class UserService {
         }
         
         return null;
+    }
+    
+    private Map<String, String> getTokenMap(User saved) {
+        String accessToken = tokenProvider.createAccessKey(saved);
+        String refreshToken = tokenProvider.createRefreshKey(saved);
+        
+        Map<String, String> token = new HashMap<>();
+        token.put("accessToken", accessToken);
+        token.put("refreshToken", refreshToken);
+        return token;
     }
 }
