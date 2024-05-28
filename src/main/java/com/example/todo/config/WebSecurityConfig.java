@@ -5,6 +5,8 @@ import com.example.todo.exception.CustomAuthenticationEntryPoint;
 import com.example.todo.filter.JWTAuthFilter;
 import com.example.todo.filter.JWTExceptionFilter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,21 +21,32 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity // 자동 권한 검사를 컨트롤러의 메서드에서 전역적으로 수행하기 위한 설정.
 //@EnableGlobalMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
+@Slf4j
 public class WebSecurityConfig {
     
     private final JWTAuthFilter jwtAuthFilter;
     private final JWTExceptionFilter jwtExceptionFilter;
-    private final CustomAuthenticationEntryPoint entryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
+    
+    
+    private final RequestProperties properties;
     
     // 시큐리티 기본 설정 (권한처리, 초기 로그인 화면 없애기 ....)
     @Bean // 라이브러리 클래스 같은 내가 만들지 않은 객체를 등록해서 주입받기 위한 아노테이션.
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        
+        // yml에서 가져온 허용 url 리스트를 jwtAuthFilter에게 전달.
+        jwtAuthFilter.setPermitAllPatterns(properties.getPermitAllPatterns());
+        log.info("리스트: {}", properties.getPermitAllPatterns());
+        log.info("배열로 변환 {}", Arrays.toString(properties.getPermitAllPatterns().toArray()));
         
         http
                 .csrf(csrfConfig -> csrfConfig.disable()) // CSRF 토큰공격을 방지하기 위한 장치 해제.
@@ -63,15 +76,15 @@ public class WebSecurityConfig {
                                 .requestMatchers("/api/auth/road-profile")
                                 .authenticated()
                                 // '/api/auth'로 시작하는 요청과 '/'요청은 권한 검사 없이 허용하겠다.
-                                .requestMatchers("/","/api/auth/**")
+                                .requestMatchers(Arrays.toString(properties.getPermitAllPatterns().toArray()).split(", "))
                                 .permitAll()
                                 // 위에서 따로 설정하지 않은 나머지 요청들은 권한 검사가 필요하다.
                                 .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> {
-                    // 인증 과정에서 예외가 발생한 경우 예외를 전달한다.
+                    // 인증 과정에서 예외가 발생한 경우 예외를 전달한다. (401)
                     //  exceptionHandling.authenticationEntryPoint(entryPoint);
-                    // 인가 과정에서 예외가 발생한 경우 예외를 전달한다.
+                    // 인가 과정에서 예외가 발생한 경우 예외를 전달한다. (403)
                     exceptionHandling.accessDeniedHandler(accessDeniedHandler);
                 });
         
