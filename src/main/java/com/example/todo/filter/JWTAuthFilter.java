@@ -50,9 +50,11 @@ public class JWTAuthFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         boolean isPermitAllUrl = permitAllPatterns.stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, requestURI));
+        log.info("URI: {}", requestURI);
         log.info("isPermitAllUrl: {}", isPermitAllUrl);
         
         if (isPermitAllUrl && !requestURI.contains("/load-profile")) {
+            log.info("통과!");
             filterChain.doFilter(request, response);
             return;
         }

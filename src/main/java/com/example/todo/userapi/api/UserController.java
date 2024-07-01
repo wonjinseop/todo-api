@@ -116,41 +116,47 @@ public class UserController {
             @AuthenticationPrincipal TokenUserInfo userInfo
     ) {
         log.info("/api/auth/load-profile GET! - userInfo: {}", userInfo);
-        try {
+//        try {
             // 1. 프로필 사진의 경로부터 얻어야 한다.
-            String filePath = userService.findProfilePath(userInfo.getUserId());
+        String filePath = userService.findProfilePath(userInfo.getUserId());
             
             // 2. 얻어낸 파일 경로를 통해 실제 파일 데이터를 로드하기.
-            File profileFile = new File(filePath);
+//            File profileFile = new File(filePath);
+//
+//            // 모든 사용자가 프로필 사진을 가지는 것은 아니다. -> 프사를 등록하지 않은 사람은 해당 경로가 존재하지 않을 것.
+//            // 만약 존재하지 않는 경로라면 클라이언트로 404 status를 리턴.
+//            if (!profileFile.exists()) {
+//                // 만약 조회한 파일 경로가 http://~~~로 시작한다면 -> 카카오 로그인 한 사람이다!
+//                if (filePath.startsWith("http://")) {
+//                    return ResponseEntity.ok().body(filePath);
+//                }
+//                return ResponseEntity.notFound().build();
+//            }
             
-            // 모든 사용자가 프로필 사진을 가지는 것은 아니다. -> 프사를 등록하지 않은 사람은 해당 경로가 존재하지 않을 것.
-            // 만약 존재하지 않는 경로라면 클라이언트로 404 status를 리턴.
-            if (!profileFile.exists()) {
-                // 만약 조회한 파일 경로가 http://~~~로 시작한다면 -> 카카오 로그인 한 사람이다!
-                if (filePath.startsWith("http://")) {
-                    return ResponseEntity.ok().body(filePath);
-                }
-                return ResponseEntity.notFound().build();
-            }
-            
-            // 해당 경로에 저장된 파일을 바이트 배열로 직렬화 해서 리턴
-            byte[] fileData = FileCopyUtils.copyToByteArray(profileFile);
-            
-            // 3. 응답 헤더에 컨텐츠 타입을 설정
-            HttpHeaders headers = new HttpHeaders();
-            MediaType contentType = findExtensionAndGetMediaType(filePath);
-            if (contentType == null) {
-                return ResponseEntity.internalServerError()
-                        .body("발견된 파일은 이미지 파일이 아닙니다.");
-            }
-            headers.setContentType(contentType);
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(fileData);
-            
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if(filePath != null) {
+            return ResponseEntity.ok().body(filePath);
+        } else {
+            return ResponseEntity.notFound().build();
         }
+            
+//            // 해당 경로에 저장된 파일을 바이트 배열로 직렬화 해서 리턴
+//            byte[] fileData = FileCopyUtils.copyToByteArray(profileFile);
+//
+//            // 3. 응답 헤더에 컨텐츠 타입을 설정
+//            HttpHeaders headers = new HttpHeaders();
+//            MediaType contentType = findExtensionAndGetMediaType(filePath);
+//            if (contentType == null) {
+//                return ResponseEntity.internalServerError()
+//                        .body("발견된 파일은 이미지 파일이 아닙니다.");
+//            }
+//            headers.setContentType(contentType);
+//            return ResponseEntity.ok()
+//                    .headers(headers)
+//                    .body(fileData);
+//
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
         
     }
     

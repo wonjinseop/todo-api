@@ -2,6 +2,7 @@ package com.example.todo.userapi.service;
 
 import com.example.todo.auth.TokenProvider;
 import com.example.todo.auth.TokenUserInfo;
+import com.example.todo.aws.S3Service;
 import com.example.todo.exception.NoRegisteredArgumentException;
 import com.example.todo.userapi.dto.request.LoginRequestDTO;
 import com.example.todo.userapi.dto.request.UserSignUpRequestDTO;
@@ -42,6 +43,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenProvider tokenProvider;
+    private final S3Service s3Service;
     
     @Value("${kakao.client_id}")
     private String KAKAO_CLIENT_ID;
@@ -137,8 +139,8 @@ public class UserService {
     public String uploadProfileImage(MultipartFile profileImage) throws IOException {
         
         // 루트 디렉토리가 실존하는지 확인 후 존재하지 않으면 생성.
-        File rootDir = new File(uploadRootPath);
-        if (!rootDir.exists()) rootDir.mkdirs();
+//        File rootDir = new File(uploadRootPath);
+//        if (!rootDir.exists()) rootDir.mkdirs();
     
         // 파일명을 유니크하게 변경 (이름 충돌 가능성을 대비)
         // UUID와 원본 파일명을 결합 -> 규칙은 없어요.
@@ -147,21 +149,21 @@ public class UserService {
         
         // 파일을 저장
         File uploadFile = new File(uploadRootPath + "/" + uniqueFileName);
-        profileImage.transferTo(uploadFile);
+//        profileImage.transferTo(uploadFile);
         
-        return uniqueFileName;
+        return s3Service.uploadToS3Bucket(profileImage.getBytes(), uniqueFileName);
     }
     
     public String findProfilePath(String userId) {
         User user
                 = userRepository.findById(userId).orElseThrow(RuntimeException::new);
-        String profileImg = user.getProfileImg();
+        return user.getProfileImg();
         // 만약 조회한 파일 경로가 http://~~~로 시작한다면 -> 카카오 로그인 한 사람이다!
-        if (profileImg.startsWith("http://")) {
-            return profileImg;
-        }
-        // DB에는 파일명만 저장. -> service가 가지고 있는 Root Path와 연결해서 리턴
-        return uploadRootPath + "/" + profileImg;
+//        if (profileImg.startsWith("http://")) {
+//            return profileImg;
+//        }
+//        // DB에는 파일명만 저장. -> service가 가지고 있는 Root Path와 연결해서 리턴
+//        return uploadRootPath + "/" + profileImg;
     }
     
     public LoginResponseDTO kakaoService(String code) {
